@@ -1,13 +1,8 @@
-import fs from 'fs';
-
 const BOT_TOKEN =
 "8614060040:AAEnvPS3qrgHKaYiuX1EE_U3NyEGdveFG64";
 
 const CHAT_ID =
 "700636974";
-
-const FILE =
-"prices.json";
 
 // ====================
 // TELEGRAM
@@ -31,47 +26,12 @@ async function sendTelegram(message){
             }
         );
 
+        console.log("TELEGRAM SENT");
+
     }catch(e){
 
         console.log(e);
     }
-}
-
-// ====================
-// LOAD PRICE
-// ====================
-
-function loadPrices(){
-
-    try{
-
-        const data =
-        fs.readFileSync(FILE,'utf8');
-
-        return JSON.parse(data);
-
-    }catch{
-
-        return {
-            turbo:0,
-            pnic:0
-        };
-    }
-}
-
-// ====================
-// SAVE PRICE
-// ====================
-
-function savePrices(turbo,pnic){
-
-    fs.writeFileSync(
-        FILE,
-        JSON.stringify({
-            turbo,
-            pnic
-        })
-    );
 }
 
 // ====================
@@ -81,9 +41,6 @@ function savePrices(turbo,pnic){
 async function run(){
 
     try{
-
-        const old =
-        loadPrices();
 
         // ====================
         // LOAD TURBO + PNIC
@@ -117,70 +74,20 @@ async function run(){
         console.log("PNIC:", pnic);
 
         // ====================
-        // TURBO ALERT
+        // SEND TELEGRAM
         // ====================
 
-        if(old.turbo !== 0){
+        await sendTelegram(
 
-            const turboChange =
-            ((turbo-old.turbo)/old.turbo)*100;
+`🚀 PRICE UPDATE
 
-            if(Math.abs(turboChange)>=0.5){
+TURBO: $${turbo}
 
-                let icon = '🚀';
+PNIC: $${pnic}`
 
-                if(turboChange < 0){
-                    icon = '📉';
-                }
+        );
 
-                await sendTelegram(
-
-`${icon} TURBO ALERT
-
-Price: $${turbo}
-
-Change: ${turboChange.toFixed(2)}%`
-
-                );
-            }
-        }
-
-        // ====================
-        // PNIC ALERT
-        // ====================
-
-        if(old.pnic !== 0){
-
-            const pnicChange =
-            ((pnic-old.pnic)/old.pnic)*100;
-
-            if(Math.abs(pnicChange)>=0.5){
-
-                let icon = '🚀';
-
-                if(pnicChange < 0){
-                    icon = '📉';
-                }
-
-                await sendTelegram(
-
-`${icon} PNIC ALERT
-
-Price: $${pnic}
-
-Change: ${pnicChange.toFixed(2)}%`
-
-                );
-            }
-        }
-
-        // ====================
-        // SAVE
-        // ====================
-
-        savePrices(turbo,pnic);
-
-        console.log('DONE');
+        console.log("DONE");
 
     }catch(e){
 
