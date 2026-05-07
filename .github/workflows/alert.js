@@ -1,12 +1,17 @@
 const fs = require('fs');
 
 const BOT_TOKEN =
-"Bcuongbe0_bot";
+"BOT_TOKEN_CUA_ANH";
 
 const CHAT_ID =
 "700636974";
 
-const FILE = 'prices.json';
+const FILE =
+"prices.json";
+
+// ====================
+// TELEGRAM
+// ====================
 
 async function sendTelegram(message){
 
@@ -25,7 +30,11 @@ async function sendTelegram(message){
     );
 }
 
-function loadOldPrices(){
+// ====================
+// LOAD OLD PRICE
+// ====================
+
+function loadPrices(){
 
     try{
 
@@ -43,6 +52,10 @@ function loadOldPrices(){
     }
 }
 
+// ====================
+// SAVE PRICE
+// ====================
+
 function savePrices(turbo,pnic){
 
     fs.writeFileSync(
@@ -54,14 +67,21 @@ function savePrices(turbo,pnic){
     );
 }
 
+// ====================
+// MAIN
+// ====================
+
 async function run(){
 
     try{
 
         const old =
-        loadOldPrices();
+        loadPrices();
 
+        // ====================
         // TURBO
+        // ====================
+
         const turboRes =
         await fetch(
             'https://api.binance.com/api/v3/ticker/price?symbol=TURBOUSDT'
@@ -73,7 +93,10 @@ async function run(){
         const turbo =
         Number(turboData.price);
 
+        // ====================
         // PNIC
+        // ====================
+
         const pnicRes =
         await fetch(
             'https://mqeejpeekuzzygwabmnh.supabase.co/rest/v1/price_snapshots?select=pnic_price_usd&order=timestamp.desc&limit=1',
@@ -93,13 +116,16 @@ async function run(){
             pnicData[0].pnic_price_usd
         );
 
-        // ALERT TURBO
+        // ====================
+        // TURBO ALERT
+        // ====================
+
         if(old.turbo !== 0){
 
             const turboChange =
             ((turbo-old.turbo)/old.turbo)*100;
 
-            if(Math.abs(turboChange)>=3){
+            if(Math.abs(turboChange)>=1){
 
                 await sendTelegram(
 
@@ -113,13 +139,16 @@ Change: ${turboChange.toFixed(2)}%`
             }
         }
 
-        // ALERT PNIC
+        // ====================
+        // PNIC ALERT
+        // ====================
+
         if(old.pnic !== 0){
 
             const pnicChange =
             ((pnic-old.pnic)/old.pnic)*100;
 
-            if(Math.abs(pnicChange)>=3){
+            if(Math.abs(pnicChange)>=1){
 
                 await sendTelegram(
 
@@ -133,6 +162,7 @@ Change: ${pnicChange.toFixed(2)}%`
             }
         }
 
+        // SAVE NEW PRICE
         savePrices(turbo,pnic);
 
         console.log('DONE');
