@@ -100,7 +100,7 @@ h1{
   <div class="card">
     <div class="top">
       <img class="logo"
-      src="https://mirx.miracledex.net/favicon.ico">
+      src="https://pbs.twimg.com/media/Gwyi6sBWIAAE-UF?format=jpg&name=small">
 
       <div class="name">MIRX</div>
     </div>
@@ -178,10 +178,6 @@ h1{
 
 <script>
 
-// ==========================
-// CONFIG
-// ==========================
-
 const USDVND = 26000;
 
 const BOT_TOKEN =
@@ -223,7 +219,7 @@ async function sendTelegram(message){
 }
 
 // ==========================
-// ALERT
+// ALERT ONLY TURBO + PNIC
 // ==========================
 
 async function checkAlert(symbol, price){
@@ -244,7 +240,6 @@ async function checkAlert(symbol, price){
   const percent =
     ((price - oldPrice) / oldPrice) * 100;
 
-  // ALERT 0.5%
   if(Math.abs(percent) >= 0.5){
 
     let icon = '🚀';
@@ -331,33 +326,15 @@ async function loadBinance(){
       data.find(x=>x.symbol==='AVAXUSDT');
 
     if(btc){
-
       updatePrice('btc', btc.price);
-
-      checkAlert(
-        'BTC',
-        btc.price
-      );
     }
 
     if(eth){
-
       updatePrice('eth', eth.price);
-
-      checkAlert(
-        'ETH',
-        eth.price
-      );
     }
 
     if(avax){
-
       updatePrice('avax', avax.price);
-
-      checkAlert(
-        'AVAX',
-        avax.price
-      );
     }
 
   }catch(e){
@@ -442,11 +419,6 @@ async function loadMIRX(){
         'mirx',
         data[0].price_usd
       );
-
-      checkAlert(
-        'MIRX',
-        data[0].price_usd
-      );
     }
 
   }catch(e){
@@ -454,17 +426,9 @@ async function loadMIRX(){
   }
 }
 
-// ==========================
-// LOAD
-// ==========================
-
 loadBinance();
 loadMiracle();
 loadMIRX();
-
-// ==========================
-// REFRESH
-// ==========================
 
 setInterval(loadBinance,3000);
 setInterval(loadMiracle,4000);
