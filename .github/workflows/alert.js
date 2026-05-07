@@ -10,12 +10,12 @@ const FILE =
 "prices.json";
 
 // ====================
-// TELEGRAM
+// SEND TELEGRAM
 // ====================
 
 async function sendTelegram(message){
 
-    await fetch(
+    const res = await fetch(
         `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,
         {
             method:'POST',
@@ -28,10 +28,14 @@ async function sendTelegram(message){
             })
         }
     );
+
+    const data = await res.json();
+
+    console.log(data);
 }
 
 // ====================
-// LOAD OLD PRICE
+// LOAD PRICE
 // ====================
 
 function loadPrices(){
@@ -116,53 +120,24 @@ async function run(){
             pnicData[0].pnic_price_usd
         );
 
-        // ====================
-        // TURBO ALERT
-        // ====================
-
-        if(old.turbo !== 0){
-
-            const turboChange =
-            ((turbo-old.turbo)/old.turbo)*100;
-
-            if(Math.abs(turboChange)>=0){
-
-                await sendTelegram(
-
-`🚀 TURBO ALERT
-
-Price: $${turbo}
-
-Change: ${turboChange.toFixed(2)}%`
-
-                );
-            }
-        }
+        console.log("TURBO:", turbo);
+        console.log("PNIC:", pnic);
 
         // ====================
-        // PNIC ALERT
+        // TEST MESSAGE
         // ====================
 
-        if(old.pnic !== 0){
+        await sendTelegram(
 
-            const pnicChange =
-            ((pnic-old.pnic)/old.pnic)*100;
+`✅ BOT RUNNING
 
-            if(Math.abs(pnicChange)>=0){
+TURBO: $${turbo}
 
-                await sendTelegram(
+PNIC: $${pnic}`
 
-`🔥 PNIC ALERT
+        );
 
-Price: $${pnic}
-
-Change: ${pnicChange.toFixed(2)}%`
-
-                );
-            }
-        }
-
-        // SAVE NEW PRICE
+        // SAVE PRICE
         savePrices(turbo,pnic);
 
         console.log('DONE');
