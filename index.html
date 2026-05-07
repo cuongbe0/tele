@@ -244,7 +244,8 @@ async function checkAlert(symbol, price){
   const percent =
     ((price - oldPrice) / oldPrice) * 100;
 
-  if(Math.abs(percent) >= 3){
+  // ALERT 1%
+  if(Math.abs(percent) >= 1){
 
     let icon = '🚀';
 
