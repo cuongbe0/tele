@@ -1,93 +1,146 @@
-const BOT_TOKEN = "cuongbe0_BOT";
-const CHAT_ID = "700636974";
+const fs = require('fs');
 
-let lastTurbo = 0;
-let lastPnic = 0;
+const BOT_TOKEN =
+"Bcuongbe0_bot";
+
+const CHAT_ID =
+"700636974";
+
+const FILE = 'prices.json';
 
 async function sendTelegram(message){
 
-  const url =
-  `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
-
-  await fetch(url,{
-    method:"POST",
-    headers:{
-      "Content-Type":"application/json"
-    },
-    body:JSON.stringify({
-      chat_id:CHAT_ID,
-      text:message
-    })
-  });
+    await fetch(
+        `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,
+        {
+            method:'POST',
+            headers:{
+                'Content-Type':'application/json'
+            },
+            body:JSON.stringify({
+                chat_id:CHAT_ID,
+                text:message
+            })
+        }
+    );
 }
 
-async function checkPrices(){
+function loadOldPrices(){
 
-  try{
+    try{
 
-    // TURBO
-    const turboRes = await fetch(
-      "https://api.binance.com/api/v3/ticker/price?symbol=TURBOUSDT"
+        const data =
+        fs.readFileSync(FILE,'utf8');
+
+        return JSON.parse(data);
+
+    }catch{
+
+        return {
+            turbo:0,
+            pnic:0
+        };
+    }
+}
+
+function savePrices(turbo,pnic){
+
+    fs.writeFileSync(
+        FILE,
+        JSON.stringify({
+            turbo,
+            pnic
+        })
     );
+}
 
-    const turboData = await turboRes.json();
+async function run(){
 
-    const turboPrice =
-      parseFloat(turboData.price);
+    try{
 
-    // PNIC
-    const pnicRes = await fetch(
-      "https://api.dexscreener.com/latest/dex/tokens/0x8d87f8ac6d8df2f0d4f3d4b77e0d4c2615d9f7f1"
-    );
+        const old =
+        loadOldPrices();
 
-    const pnicData = await pnicRes.json();
+        // TURBO
+        const turboRes =
+        await fetch(
+            'https://api.binance.com/api/v3/ticker/price?symbol=TURBOUSDT'
+        );
 
-    const pnicPrice =
-      parseFloat(pnicData.pairs[0].priceUsd);
+        const turboData =
+        await turboRes.json();
 
-    // ALERT TURBO
-    if(lastTurbo !== 0){
+        const turbo =
+        Number(turboData.price);
 
-      const turboChange =
-      ((turboPrice - lastTurbo) / lastTurbo) * 100;
+        // PNIC
+        const pnicRes =
+        await fetch(
+            'https://mqeejpeekuzzygwabmnh.supabase.co/rest/v1/price_snapshots?select=pnic_price_usd&order=timestamp.desc&limit=1',
+            {
+                headers:{
+                    apikey:
+                    'sb_publishable__EFtt8r3kAP6zwWT0Ze38w_zktfLWuv'
+                }
+            }
+        );
 
-      if(Math.abs(turboChange) >= 3){
+        const pnicData =
+        await pnicRes.json();
 
-        await sendTelegram(
+        const pnic =
+        Number(
+            pnicData[0].pnic_price_usd
+        );
+
+        // ALERT TURBO
+        if(old.turbo !== 0){
+
+            const turboChange =
+            ((turbo-old.turbo)/old.turbo)*100;
+
+            if(Math.abs(turboChange)>=3){
+
+                await sendTelegram(
+
 `🚀 TURBO ALERT
 
-Price: $${turboPrice}
+Price: $${turbo}
 
 Change: ${turboChange.toFixed(2)}%`
-        );
-      }
-    }
 
-    // ALERT PNIC
-    if(lastPnic !== 0){
+                );
+            }
+        }
 
-      const pnicChange =
-      ((pnicPrice - lastPnic) / lastPnic) * 100;
+        // ALERT PNIC
+        if(old.pnic !== 0){
 
-      if(Math.abs(pnicChange) >= 3){
+            const pnicChange =
+            ((pnic-old.pnic)/old.pnic)*100;
 
-        await sendTelegram(
+            if(Math.abs(pnicChange)>=3){
+
+                await sendTelegram(
+
 `🔥 PNIC ALERT
 
-Price: $${pnicPrice}
+Price: $${pnic}
 
 Change: ${pnicChange.toFixed(2)}%`
-        );
-      }
+
+                );
+            }
+        }
+
+        savePrices(turbo,pnic);
+
+        console.log('DONE');
+
+    }catch(e){
+
+        console.log(e);
     }
-
-    lastTurbo = turboPrice;
-    lastPnic = pnicPrice;
-
-  }catch(err){
-
-    console.log(err);
-  }
 }
 
-checkPrices();
+run();
