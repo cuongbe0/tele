@@ -1,7 +1,7 @@
 import fs from 'fs';
 
 const BOT_TOKEN =
-"cuongbe0_BOT";
+"8614060040:AAEnvPS3qrgHKaYiuX1EE_U3NyEGdveFG64";
 
 const CHAT_ID =
 "700636974";
