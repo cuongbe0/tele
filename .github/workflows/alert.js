@@ -1,4 +1,4 @@
-const fs = require('fs');
+import fs from 'fs';
 
 const BOT_TOKEN =
 "cuongbe0_BOT";
