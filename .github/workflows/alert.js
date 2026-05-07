@@ -125,7 +125,7 @@ async function run(){
             const turboChange =
             ((turbo-old.turbo)/old.turbo)*100;
 
-            if(Math.abs(turboChange)>=1){
+            if(Math.abs(turboChange)>=0){
 
                 await sendTelegram(
 
@@ -148,7 +148,7 @@ Change: ${turboChange.toFixed(2)}%`
             const pnicChange =
             ((pnic-old.pnic)/old.pnic)*100;
 
-            if(Math.abs(pnicChange)>=1){
+            if(Math.abs(pnicChange)>=0){
 
                 await sendTelegram(
 
