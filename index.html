@@ -1,92 +1,475 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LIVE CRYPTO DASHBOARD</title>
+
+<style>
+
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+}
+
+body{
+  background:#050816;
+  color:#fff;
+  font-family:Arial,sans-serif;
+  padding:10px;
+}
+
+h1{
+  text-align:center;
+  margin-bottom:12px;
+  font-size:24px;
+}
+
+.dashboard{
+  max-width:520px;
+  margin:auto;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+.card{
+  background:#0d132b;
+  border:1px solid #00fff2;
+  border-radius:18px;
+  padding:14px;
+  min-height:105px;
+
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+}
+
+.top{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-bottom:8px;
+}
+
+.logo{
+  width:34px;
+  height:34px;
+  border-radius:50%;
+  object-fit:cover;
+  background:#fff;
+}
+
+.name{
+  font-size:18px;
+  font-weight:bold;
+}
+
+.price{
+  font-size:28px;
+  font-weight:bold;
+  margin-bottom:4px;
+  transition:0.3s;
+}
+
+.vnd{
+  font-size:16px;
+  color:#bfc7d5;
+}
+
+.green{
+  color:#00ff99;
+}
+
+.red{
+  color:#ff5577;
+}
+
+</style>
+</head>
+
+<body>
+
+<h1>🚀 LIVE CRYPTO DASHBOARD</h1>
+
+<div class="dashboard">
+
+  <!-- MIRX -->
+  <div class="card">
+    <div class="top">
+      <img class="logo"
+      src="https://mirx.miracledex.net/favicon.ico">
+
+      <div class="name">MIRX</div>
+    </div>
+
+    <div id="mirx-price" class="price">...</div>
+    <div id="mirx-vnd" class="vnd"></div>
+  </div>
+
+  <!-- TURBO -->
+  <div class="card">
+    <div class="top">
+      <img class="logo"
+      src="https://turbo.miracledex.net/turbo-logo.png">
+
+      <div class="name">TURBO</div>
+    </div>
+
+    <div id="turbo-price" class="price">...</div>
+    <div id="turbo-vnd" class="vnd"></div>
+  </div>
+
+  <!-- PNIC -->
+  <div class="card">
+    <div class="top">
+      <img class="logo"
+      src="https://coin-images.coingecko.com/coins/images/37667/small/IMG_20240506_181047_087.jpg?1715181260">
+
+      <div class="name">PNIC</div>
+    </div>
+
+    <div id="pnic-price" class="price">...</div>
+    <div id="pnic-vnd" class="vnd"></div>
+  </div>
+
+  <!-- BTC -->
+  <div class="card">
+    <div class="top">
+      <img class="logo"
+      src="https://cryptologos.cc/logos/bitcoin-btc-logo.png">
+
+      <div class="name">BTC</div>
+    </div>
+
+    <div id="btc-price" class="price">...</div>
+    <div id="btc-vnd" class="vnd"></div>
+  </div>
+
+  <!-- ETH -->
+  <div class="card">
+    <div class="top">
+      <img class="logo"
+      src="https://cryptologos.cc/logos/ethereum-eth-logo.png">
+
+      <div class="name">ETH</div>
+    </div>
+
+    <div id="eth-price" class="price">...</div>
+    <div id="eth-vnd" class="vnd"></div>
+  </div>
+
+  <!-- AVAX -->
+  <div class="card">
+    <div class="top">
+      <img class="logo"
+      src="https://cryptologos.cc/logos/avalanche-avax-logo.png">
+
+      <div class="name">AVAX</div>
+    </div>
+
+    <div id="avax-price" class="price">...</div>
+    <div id="avax-vnd" class="vnd"></div>
+  </div>
+
+</div>
+
 <script>
-const BOT_TOKEN = "8614060040:AAEnvPS3qrgHKaYiuX1EE_U3NyEGdveFG64";
-const CHAT_ID = "700636974";
 
-let lastTurbo = 0;
-let lastPnic = 0;
+// ==========================
+// CONFIG
+// ==========================
 
-async function sendTelegram(message) {
-    const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
+const USDVND = 26000;
 
-    await fetch(url, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
+const BOT_TOKEN =
+"8614060040:AAEnvPS3qrgHKaYiuX1EE_U3NyEGdveFG64";
+
+const CHAT_ID =
+"700636974";
+
+let oldPrices = {};
+let alertPrices = {};
+
+// ==========================
+// TELEGRAM
+// ==========================
+
+async function sendTelegram(message){
+
+  try{
+
+    await fetch(
+      `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,
+      {
+        method:'POST',
+        headers:{
+          'Content-Type':'application/json'
         },
-        body: JSON.stringify({
-            chat_id: CHAT_ID,
-            text: message
+        body:JSON.stringify({
+          chat_id:CHAT_ID,
+          text:message
         })
-    });
+      }
+    );
+
+  }catch(e){
+
+    console.log('TELEGRAM ERROR',e);
+
+  }
 }
 
-async function checkPrices() {
-    try {
+// ==========================
+// ALERT
+// ==========================
 
-        // TURBO
-        const turboRes = await fetch(
-            "https://api.binance.com/api/v3/ticker/price?symbol=TURBOUSDT"
-        );
-        const turboData = await turboRes.json();
-        const turboPrice = parseFloat(turboData.price);
+async function checkAlert(symbol, price){
 
-        // PNIC
-        const pnicRes = await fetch(
-            "https://api.dexscreener.com/latest/dex/tokens/0x8d87f8ac6d8df2f0d4f3d4b77e0d4c2615d9f7f1"
-        );
-        const pnicData = await pnicRes.json();
+  price = Number(price);
 
-        const pnicPrice = parseFloat(
-            pnicData.pairs[0].priceUsd
-        );
+  if(isNaN(price)) return;
 
-        // THÔNG BÁO TURBO
-        if (lastTurbo !== 0) {
+  if(!alertPrices[symbol]){
 
-            const turboChange =
-                ((turboPrice - lastTurbo) / lastTurbo) * 100;
+    alertPrices[symbol] = price;
+    return;
+  }
 
-            if (Math.abs(turboChange) >= 3) {
+  const oldPrice =
+    alertPrices[symbol];
 
-                sendTelegram(
-`🚀 TURBO ALERT
+  const percent =
+    ((price - oldPrice) / oldPrice) * 100;
 
-Price: $${turboPrice}
+  if(Math.abs(percent) >= 3){
 
-Change: ${turboChange.toFixed(2)}%`
-                );
-            }
-        }
+    let icon = '🚀';
 
-        // THÔNG BÁO PNIC
-        if (lastPnic !== 0) {
-
-            const pnicChange =
-                ((pnicPrice - lastPnic) / lastPnic) * 100;
-
-            if (Math.abs(pnicChange) >= 3) {
-
-                sendTelegram(
-`🔥 PNIC ALERT
-
-Price: $${pnicPrice}
-
-Change: ${pnicChange.toFixed(2)}%`
-                );
-            }
-        }
-
-        lastTurbo = turboPrice;
-        lastPnic = pnicPrice;
-
-    } catch (err) {
-        console.log(err);
+    if(percent < 0){
+      icon = '📉';
     }
+
+    await sendTelegram(
+
+`${icon} ${symbol} ALERT
+
+Price: $${price}
+
+Change: ${percent.toFixed(2)}%`
+
+    );
+
+    alertPrices[symbol] = price;
+  }
 }
 
-// check mỗi 60 giây
-setInterval(checkPrices, 60000);
+// ==========================
+// UPDATE UI
+// ==========================
 
-// chạy ngay lần đầu
-checkPrices();
+function updatePrice(id, value){
+
+  value = Number(value);
+
+  if(isNaN(value)) return;
+
+  const priceEl =
+    document.getElementById(id + '-price');
+
+  const vndEl =
+    document.getElementById(id + '-vnd');
+
+  priceEl.innerHTML =
+    '$' + value.toFixed(6);
+
+  vndEl.innerHTML =
+    (value * USDVND).toLocaleString('vi-VN')
+    + ' đ';
+
+  priceEl.classList.remove('green');
+  priceEl.classList.remove('red');
+
+  if(oldPrices[id]){
+
+    if(value > oldPrices[id]){
+      priceEl.classList.add('green');
+    }
+
+    if(value < oldPrices[id]){
+      priceEl.classList.add('red');
+    }
+  }
+
+  oldPrices[id] = value;
+}
+
+// ==========================
+// BINANCE
+// ==========================
+
+async function loadBinance(){
+
+  try{
+
+    const res = await fetch(
+      'https://api.binance.com/api/v3/ticker/price'
+    );
+
+    const data = await res.json();
+
+    const btc =
+      data.find(x=>x.symbol==='BTCUSDT');
+
+    const eth =
+      data.find(x=>x.symbol==='ETHUSDT');
+
+    const avax =
+      data.find(x=>x.symbol==='AVAXUSDT');
+
+    if(btc){
+
+      updatePrice('btc', btc.price);
+
+      checkAlert(
+        'BTC',
+        btc.price
+      );
+    }
+
+    if(eth){
+
+      updatePrice('eth', eth.price);
+
+      checkAlert(
+        'ETH',
+        eth.price
+      );
+    }
+
+    if(avax){
+
+      updatePrice('avax', avax.price);
+
+      checkAlert(
+        'AVAX',
+        avax.price
+      );
+    }
+
+  }catch(e){
+    console.log('BINANCE ERROR',e);
+  }
+}
+
+// ==========================
+// TURBO + PNIC
+// ==========================
+
+async function loadMiracle(){
+
+  try{
+
+    const res = await fetch(
+      'https://mqeejpeekuzzygwabmnh.supabase.co/rest/v1/price_snapshots?select=turbo_price_usd,pnic_price_usd&order=timestamp.desc&limit=1',
+      {
+        headers:{
+          apikey:
+          'sb_publishable__EFtt8r3kAP6zwWT0Ze38w_zktfLWuv'
+        }
+      }
+    );
+
+    const data = await res.json();
+
+    if(data && data.length){
+
+      updatePrice(
+        'turbo',
+        data[0].turbo_price_usd
+      );
+
+      checkAlert(
+        'TURBO',
+        data[0].turbo_price_usd
+      );
+
+      updatePrice(
+        'pnic',
+        data[0].pnic_price_usd
+      );
+
+      checkAlert(
+        'PNIC',
+        data[0].pnic_price_usd
+      );
+    }
+
+  }catch(e){
+    console.log('MIRACLE ERROR',e);
+  }
+}
+
+// ==========================
+// MIRX
+// ==========================
+
+async function loadMIRX(){
+
+  try{
+
+    const res = await fetch(
+      'https://jyqtvajmmsvmsfnemuzv.supabase.co/rest/v1/mirx_usd_prices?select=price_usd&order=timestamp.desc&limit=1',
+      {
+        headers:{
+          apikey:
+          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp5cXR2YWptbXN2bXNmbmVtdXp2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUxMDg5ODQsImV4cCI6MjA3MDY4NDk4NH0.sGHT0zojZrVHA6CyVxbBb0600xIYaVRet6qP2z2GuBA',
+
+          Authorization:
+          'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp5cXR2YWptbXN2bXNmbmVtdXp2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUxMDg5ODQsImV4cCI6MjA3MDY4NDk4NH0.sGHT0zojZrVHA6CyVxbBb0600xIYaVRet6qP2z2GuBA'
+        }
+      }
+    );
+
+    const data = await res.json();
+
+    if(data && data.length){
+
+      updatePrice(
+        'mirx',
+        data[0].price_usd
+      );
+
+      checkAlert(
+        'MIRX',
+        data[0].price_usd
+      );
+    }
+
+  }catch(e){
+    console.log('MIRX ERROR',e);
+  }
+}
+
+// ==========================
+// LOAD
+// ==========================
+
+loadBinance();
+loadMiracle();
+loadMIRX();
+
+// ==========================
+// REFRESH
+// ==========================
+
+setInterval(loadBinance,3000);
+setInterval(loadMiracle,4000);
+setInterval(loadMIRX,4000);
+
 </script>
+
+</body>
+</html>
