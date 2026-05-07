@@ -1,7 +1,7 @@
 const fs = require('fs');
 
 const BOT_TOKEN =
-"BOT_TOKEN_CUA_ANH";
+"cuongbe0_BOT";
 
 const CHAT_ID =
 "700636974";
