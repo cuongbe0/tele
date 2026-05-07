@@ -10,28 +10,31 @@ const FILE =
 "prices.json";
 
 // ====================
-// SEND TELEGRAM
+// TELEGRAM
 // ====================
 
 async function sendTelegram(message){
 
-    const res = await fetch(
-        `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,
-        {
-            method:'POST',
-            headers:{
-                'Content-Type':'application/json'
-            },
-            body:JSON.stringify({
-                chat_id:CHAT_ID,
-                text:message
-            })
-        }
-    );
+    try{
 
-    const data = await res.json();
+        await fetch(
+            `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,
+            {
+                method:'POST',
+                headers:{
+                    'Content-Type':'application/json'
+                },
+                body:JSON.stringify({
+                    chat_id:CHAT_ID,
+                    text:message
+                })
+            }
+        );
 
-    console.log(data);
+    }catch(e){
+
+        console.log(e);
+    }
 }
 
 // ====================
@@ -83,27 +86,12 @@ async function run(){
         loadPrices();
 
         // ====================
-        // TURBO
+        // LOAD TURBO + PNIC
         // ====================
 
-        const turboRes =
+        const res =
         await fetch(
-            'https://api.binance.com/api/v3/ticker/price?symbol=TURBOUSDT'
-        );
-
-        const turboData =
-        await turboRes.json();
-
-        const turbo =
-        Number(turboData.price);
-
-        // ====================
-        // PNIC
-        // ====================
-
-        const pnicRes =
-        await fetch(
-            'https://mqeejpeekuzzygwabmnh.supabase.co/rest/v1/price_snapshots?select=pnic_price_usd&order=timestamp.desc&limit=1',
+            'https://mqeejpeekuzzygwabmnh.supabase.co/rest/v1/price_snapshots?select=turbo_price_usd,pnic_price_usd&order=timestamp.desc&limit=1',
             {
                 headers:{
                     apikey:
@@ -112,32 +100,84 @@ async function run(){
             }
         );
 
-        const pnicData =
-        await pnicRes.json();
+        const data =
+        await res.json();
+
+        const turbo =
+        Number(
+            data[0].turbo_price_usd
+        );
 
         const pnic =
         Number(
-            pnicData[0].pnic_price_usd
+            data[0].pnic_price_usd
         );
 
         console.log("TURBO:", turbo);
         console.log("PNIC:", pnic);
 
         // ====================
-        // TEST MESSAGE
+        // TURBO ALERT
         // ====================
 
-        await sendTelegram(
+        if(old.turbo !== 0){
 
-`✅ BOT RUNNING
+            const turboChange =
+            ((turbo-old.turbo)/old.turbo)*100;
 
-TURBO: $${turbo}
+            if(Math.abs(turboChange)>=0.5){
 
-PNIC: $${pnic}`
+                let icon = '🚀';
 
-        );
+                if(turboChange < 0){
+                    icon = '📉';
+                }
 
-        // SAVE PRICE
+                await sendTelegram(
+
+`${icon} TURBO ALERT
+
+Price: $${turbo}
+
+Change: ${turboChange.toFixed(2)}%`
+
+                );
+            }
+        }
+
+        // ====================
+        // PNIC ALERT
+        // ====================
+
+        if(old.pnic !== 0){
+
+            const pnicChange =
+            ((pnic-old.pnic)/old.pnic)*100;
+
+            if(Math.abs(pnicChange)>=0.5){
+
+                let icon = '🚀';
+
+                if(pnicChange < 0){
+                    icon = '📉';
+                }
+
+                await sendTelegram(
+
+`${icon} PNIC ALERT
+
+Price: $${pnic}
+
+Change: ${pnicChange.toFixed(2)}%`
+
+                );
+            }
+        }
+
+        // ====================
+        // SAVE
+        // ====================
+
         savePrices(turbo,pnic);
 
         console.log('DONE');
