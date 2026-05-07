@@ -17,4 +17,4 @@ jobs:
           node-version: 24
 
       - name: Run Alert
-        run: node alert.js
+        run: node .github/workflows/alert.js
